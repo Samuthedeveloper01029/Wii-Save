@@ -30,40 +30,40 @@ int main(int argc, char **argv) {
     printf("\n WII USB SAVE REDIRECTOR - STEP 1 ");
     printf("\n ======================================= \n\n");
    
-    printf("[INFO] Inizialization of the USB door...\n");
+    printf("[INFO] Initializing USB port...\n");
     VIDEO_WaitVSync();
 
     if (!fatInitDefault()) {
-        printf("[ERROR] Impossible to initialize File System FAT!\n");
-        printf("Make sure that your USB/Hard Disk is in the external USB door.\n");
+        printf("[ERROR] Failed to initialize FAT File System!\n");
+        printf("Make sure your USB drive or Hard Disk is connected properly.\n");
     } else {
-        printf("[SUCCESS] File System FAT succesfully recognized.\n\n");
-        printf("[INFO] Creating your folder for the Wii savings...\n");
+        printf("[SUCCESS] FAT File System successfully recognized.\n\n");
+        printf("[INFO] Creating the folder for your Wii saves...\n");
        
         char cartella_salvataggi[] = "usb:/wii_saves";
         int risultato = mkdir(cartella_salvataggi, 0777);
        
         if (risultato == 0) {
-            printf("[SUCCESS] The folder '%s' has succesfully created on your device!\n", cartella_salvataggi);
+            printf("[SUCCESS] Folder '%s' successfully created on your device!\n", cartella_salvataggi);
         } else {
-            printf("[INFO] The folder '%s' already exists or the USB can be only read.\n", cartella_salvataggi);
+            printf("[INFO] Folder '%s' already exists or USB is read-only.\n", cartella_salvataggi);
         }
 
-        printf("[INFO] Test file downloading...\n");
-        char percorso_file[] = "usb:/wii_saves/test_salvataggio.txt";
+        printf("[INFO] Writing test file...\n");
+        char percorso_file[] = "usb:/wii_saves/save_test.txt";
        
         FILE *file = fopen(percorso_file, "w");
         if (file != NULL) {
             fprintf(file, "Partial EmuNAND test. If you can read this, your USB works correctly!\n");
             fclose(file);
-            printf("[SUCCESS] File succesfully created.\n");
+            printf("[SUCCESS] Test file successfully created.\n");
         } else {
-            printf("[ERROR] Impossible to copy the saving files on the USB/Hard Disk.\n");
+            printf("[ERROR] Unable to copy the save files to the USB device.\n");
         }
     }
 
     printf("\n---------------------------------------------------");
-    printf("\nPress the home button on your Wii Remote to get out of the app.\n");
+    printf("\nPress the HOME button on your Wii Remote to exit the application.\n");
 
     while(1) {
         WPAD_ScanPads();
@@ -77,3 +77,4 @@ int main(int argc, char **argv) {
     exit(0);
     return 0;
 }
+
