@@ -1,4 +1,4 @@
-name: Automatic Wii Compilator
+name: Automatic Wii DOL Editor
 
 on: [workflow_dispatch, push]
 
@@ -13,6 +13,7 @@ jobs:
 
       - name: Make the DOL
         run: |
+          export PATH=$DEVKITPPC/bin:$PATH
           powerpc-eabi-gcc -g -O2 -Wall -mrvl -mcpu=750 -meabi -mhard-float -I$DEVKITPRO/libogc/include -L$DEVKITPRO/libogc/lib/wii main.c -lfat -lwiiuse -lbcm -logc -lm -o boot.elf
           elf2dol boot.elf boot.dol
 
