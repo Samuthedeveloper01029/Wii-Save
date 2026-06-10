@@ -34,7 +34,7 @@ int CopyFile(const char *srcPath, const char *destPath) {
         return -2;
     }
 
-    char buffer;
+    char buffer[4096];
     size_t bytesRead;
     while ((bytesRead = fread(buffer, 1, sizeof(buffer), src)) > 0) {
         fwrite(buffer, 1, bytesRead, dest);
@@ -102,12 +102,12 @@ int main(int argc, char **argv) {
                 if (strcmp(currentEntry, ".") != 0 && strcmp(currentEntry, "..") != 0) {
                     printf("-> Backing up game ID: %s... ", currentEntry);
                     
-                    char usbGameDir;
+                    char usbGameDir[ISFS_MAXPATH];
                     snprintf(usbGameDir, sizeof(usbGameDir), "usb:/wii_saves/%s", currentEntry);
                     mkdir(usbGameDir, 0777);
                     
-                    char nandFilePath;
-                    char usbFilePath;
+                    char nandFilePath[ISFS_MAXPATH];
+                    char usbFilePath[ISFS_MAXPATH];
                     snprintf(nandFilePath, sizeof(nandFilePath), "%s/%s/data/data.bin", nandSaveDir, currentEntry);
                     snprintf(usbFilePath, sizeof(usbFilePath), "%s/data.bin", usbGameDir);
                     
