@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<app version="1.1">
+  <name>Wii Save Extractor</name>
+  <coder>Wii Save Team</coder>
+  <version>1.1</version>
+  <release_date>20260610</release_date>
+  <short_description>Backup Wii saves to USB</short_description>
+  <long_description>This application dumps internal Wii game saves directly to your USB drive using cIOS 249 or AHBPROT permissions.</long_description>
+</app>
