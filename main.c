@@ -34,7 +34,7 @@ int CopyFile(const char *srcPath, const char *destPath) {
         return -2;
     }
 
-    char buffer[4096];
+    char buffer;
     size_t bytesRead;
     while ((bytesRead = fread(buffer, 1, sizeof(buffer), src)) > 0) {
         fwrite(buffer, 1, bytesRead, dest);
@@ -46,8 +46,8 @@ int CopyFile(const char *srcPath, const char *destPath) {
 }
 
 int main(int argc, char **argv) {
-    if (SYS_GetIOSVersion() != 249) {
-        SYS_ReloadIOS(249);
+    if (IOS_GetVersion() != 249) {
+        IOS_ReloadIOS(249);
     }
 
     InitialiseVideo();
@@ -57,12 +57,12 @@ int main(int argc, char **argv) {
     printf("\n ======================================= \n\n");
    
     printf("[INFO] Checking hardware permissions...\n");
-    if (SYS_GetIOSVersion() == 249) {
+    if (IOS_GetVersion() == 249) {
         printf("[SUCCESS] cIOS 249 successfully active.\n");
     } else {
         printf("[WARNING] Custom IOS not active. Retrying with default permissions...\n");
     }
-    printf("Current IOS in use: %d\n\n", SYS_GetIOSVersion());
+    printf("Current IOS in use: %d\n\n", IOS_GetVersion());
 
     printf("[INFO] Initializing Wii NAND Filesystem...\n");
     s32 isfs_status = ISFS_Initialize();
@@ -102,12 +102,12 @@ int main(int argc, char **argv) {
                 if (strcmp(currentEntry, ".") != 0 && strcmp(currentEntry, "..") != 0) {
                     printf("-> Backing up game ID: %s... ", currentEntry);
                     
-                    char usbGameDir[256];
+                    char usbGameDir;
                     snprintf(usbGameDir, sizeof(usbGameDir), "usb:/wii_saves/%s", currentEntry);
                     mkdir(usbGameDir, 0777);
                     
-                    char nandFilePath[256];
-                    char usbFilePath[256];
+                    char nandFilePath;
+                    char usbFilePath;
                     snprintf(nandFilePath, sizeof(nandFilePath), "%s/%s/data/data.bin", nandSaveDir, currentEntry);
                     snprintf(usbFilePath, sizeof(usbFilePath), "%s/data.bin", usbGameDir);
                     
