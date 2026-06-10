@@ -3,6 +3,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 #include <gccore.h>
 #include <wiiuse/wpad.h>
 #include <fat.h>
@@ -23,47 +24,111 @@ void InitialiseVideo() {
     console_init(xfb, 20, 20, rmode->fbWidth, rmode->xfbHeight, rmode->fbWidth * VI_DISPLAY_PIX_SZ);
 }
 
+int CopyFile(const char *srcPath, const char *destPath) {
+    FILE *src = fopen(srcPath, "rb");
+    if (!src) return -1;
+
+    FILE *dest = fopen(destPath, "wb");
+    if (!dest) {
+        fclose(src);
+        return -2;
+    }
+
+    char buffer[4096];
+    size_t bytesRead;
+    while ((bytesRead = fread(buffer, 1, sizeof(buffer), src)) > 0) {
+        fwrite(buffer, 1, bytesRead, dest);
+    }
+
+    fclose(src);
+    fclose(dest);
+    return 0;
+}
+
 int main(int argc, char **argv) {
+    if (SYS_GetIOSVersion() != 249) {
+        SYS_ReloadIOS(249);
+    }
+
     InitialiseVideo();
    
     printf("\n ======================================= ");
-    printf("\n WII USB SAVE REDIRECTOR - STEP 1 ");
+    printf("\n WII USB SAVE EXTRACTOR v1.1 ");
     printf("\n ======================================= \n\n");
    
-    printf("[INFO] Initializing USB port...\n");
-    VIDEO_WaitVSync();
-
-    if (!fatInitDefault()) {
-        printf("[ERROR] Failed to initialize FAT File System!\n");
-        printf("Make sure your USB drive or Hard Disk is connected properly.\n");
+    printf("[INFO] Checking hardware permissions...\n");
+    if (HAVE_AHBPROT) {
+        printf("[SUCCESS] AHBPROT Access Granted (Direct NAND access available).\n");
     } else {
-        printf("[SUCCESS] FAT File System successfully recognized.\n\n");
-        printf("[INFO] Creating the folder for your Wii saves...\n");
-       
-        char cartella_salvataggi[] = "usb:/wii_saves";
-        int risultato = mkdir(cartella_salvataggi, 0777);
-       
-        if (risultato == 0) {
-            printf("[SUCCESS] Folder '%s' successfully created on your device!\n", cartella_salvataggi);
-        } else {
-            printf("[INFO] Folder '%s' already exists or USB is read-only.\n", cartella_salvataggi);
+        printf("[WARNING] AHBPROT Disabled. Relying entirely on cIOS 249...\n");
+        if (SYS_GetIOSVersion() != 249) {
+            printf("[ERROR] cIOS 249 not loaded! NAND access will likely fail.\n");
         }
+    }
+    printf("Current IOS in use: %d\n\n", SYS_GetIOSVersion());
 
-        printf("[INFO] Writing test file...\n");
-        char percorso_file[] = "usb:/wii_saves/save_test.txt";
-       
-        FILE *file = fopen(percorso_file, "w");
-        if (file != NULL) {
-            fprintf(file, "Partial EmuNAND test. If you can read this, your USB works correctly!\n");
-            fclose(file);
-            printf("[SUCCESS] Test file successfully created.\n");
+    printf("[INFO] Initializing Wii NAND Filesystem...\n");
+    s32 isfs_status = ISFS_Initialize();
+    if (isfs_status != LIBOGC_SUCCESS) {
+        printf("[ERROR] Failed to initialize NAND access! Code: %d\n", isfs_status);
+        printf("Please ensure cIOS 249 is installed on your Wii.\n");
+    } else {
+        printf("[SUCCESS] Wii NAND successfully mounted.\n\n");
+    }
+
+    printf("[INFO] Initializing USB Drive...\n");
+    if (!fatInitDefault()) {
+        printf("[ERROR] Failed to initialize FAT File System on USB!\n");
+        printf("Check your USB connection. Use the outer/bottom port near the edge.\n");
+    } else {
+        printf("[SUCCESS] USB Storage recognized.\n\n");
+        
+        mkdir("usb:/wii_saves", 0777);
+        const char *nandSaveDir = "/title/00010000";
+        printf("[INFO] Scanning internal saves in %s...\n", nandSaveDir);
+        
+        u32 numEntries = 0;
+        static char nameList[MAXPATHLEN] __attribute__((aligned(32)));
+        
+        s32 ret = ISFS_ReadDir(nandSaveDir, nameList, &numEntries);
+        
+        if (ret < 0) {
+            printf("[ERROR] Cannot read Wii saves directory. Error code: %d\n", ret);
+            if (ret == -102) printf("Reason: Access denied (Permissions issue).\n");
+        } else if (numEntries == 0) {
+            printf("[INFO] No game saves found on this console.\n");
         } else {
-            printf("[ERROR] Unable to copy the save files to the USB device.\n");
+            printf("[INFO] Found %d game folders. Starting backup...\n\n", numEntries);
+            
+            char *currentEntry = nameList;
+            for (u32 i = 0; i < numEntries; i++) {
+                if (strcmp(currentEntry, ".") != 0 && strcmp(currentEntry, "..") != 0) {
+                    printf("-> Backing up game ID: %s... ", currentEntry);
+                    
+                    char usbGameDir[256];
+                    snprintf(usbGameDir, sizeof(usbGameDir), "usb:/wii_saves/%s", currentEntry);
+                    mkdir(usbGameDir, 0777);
+                    
+                    char nandFilePath[256];
+                    char usbFilePath[256];
+                    snprintf(nandFilePath, sizeof(nandFilePath), "%s/%s/data/data.bin", nandSaveDir, currentEntry);
+                    snprintf(usbFilePath, sizeof(usbFilePath), "%s/data.bin", usbGameDir);
+                    
+                    int copyResult = CopyFile(nandFilePath, usbFilePath);
+                    if (copyResult == 0) {
+                        printf("[OK]\n");
+                    } else {
+                        printf("[SKIPPED/NO DATA]\n");
+                    }
+                }
+                currentEntry += strlen(currentEntry) + 1;
+            }
+            printf("\n[SUCCESS] Backup process finished!\n");
         }
     }
 
     printf("\n---------------------------------------------------");
-    printf("\nPress the HOME button on your Wii Remote to exit the application.\n");
+    printf("\nPress the HOME button on your Wii Remote to exit.\n");
 
     while(1) {
         WPAD_ScanPads();
@@ -74,7 +139,7 @@ int main(int argc, char **argv) {
         VIDEO_WaitVSync();
     }
 
+    ISFS_Deinitialize();
     exit(0);
     return 0;
 }
-
