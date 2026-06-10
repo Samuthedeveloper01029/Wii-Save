@@ -18,7 +18,7 @@ jobs:
           powerpc-eabi-gcc -g -O2 -Wall -mrvl -mcpu=750 -meabi -mhard-float -DGECKO -DHW_RVL \
             -I$DEVKITPRO/libogc/include \
             main.c \
-            -L$DEVKITPRO/libogc/lib/wii -Wl,--start-group -lfat -lwiiuse -logc -lm -Wl,--end-group \
+            -L$DEVKITPRO/libogc/lib/wii -Wl,--start-group -lfat -lwiiuse -lbte -logc -lm -Wl,--end-group \
             -o boot.elf
           
           elf2dol boot.elf boot.dol
