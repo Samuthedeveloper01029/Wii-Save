@@ -18,19 +18,19 @@ jobs:
           powerpc-eabi-gcc -g -O2 -Wall -mrvl -mcpu=750 -meabi -mhard-float -DGECKO -DHW_RVL \
             -I$DEVKITPRO/libogc/include \
             main.c \
-            -L$DEVKITPRO/libogc/lib/wii -lfat -lwiiuse -logc -lm \
+            -L$DEVKITPRO/libogc/lib/wii -Wl,--start-group -lfat -lwiiuse -logc -lm -Wl,--end-group \
             -o boot.elf
           
           elf2dol boot.elf boot.dol
 
       - name: Prepare Release Folder
         run: |
-          mkdir -p release/apps/WiiSave
-          cp boot.dol release/apps/WiiSave/
-          cp apps/WiiSave/meta.xml release/apps/WiiSave/
+          mkdir -p "release/apps/Wii Save"
+          cp boot.dol "release/apps/Wii Save/"
+          cp "apps/Wii Save/meta.xml" "release/apps/Wii Save/"
           
-          if [ -f "apps/WiiSave/icon.png" ]; then
-            cp apps/WiiSave/icon.png release/apps/WiiSave/
+          if [ -f "apps/Wii Save/icon.png" ]; then
+            cp "apps/Wii Save/icon.png" "release/apps/Wii Save/"
           fi
           
           if [ -d "apps/d2x-cios-installer" ]; then
