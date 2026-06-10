@@ -57,19 +57,16 @@ int main(int argc, char **argv) {
     printf("\n ======================================= \n\n");
    
     printf("[INFO] Checking hardware permissions...\n");
-    if (HAVE_AHBPROT) {
-        printf("[SUCCESS] AHBPROT Access Granted (Direct NAND access available).\n");
+    if (SYS_GetIOSVersion() == 249) {
+        printf("[SUCCESS] cIOS 249 successfully active.\n");
     } else {
-        printf("[WARNING] AHBPROT Disabled. Relying entirely on cIOS 249...\n");
-        if (SYS_GetIOSVersion() != 249) {
-            printf("[ERROR] cIOS 249 not loaded! NAND access will likely fail.\n");
-        }
+        printf("[WARNING] Custom IOS not active. Retrying with default permissions...\n");
     }
     printf("Current IOS in use: %d\n\n", SYS_GetIOSVersion());
 
     printf("[INFO] Initializing Wii NAND Filesystem...\n");
     s32 isfs_status = ISFS_Initialize();
-    if (isfs_status != LIBOGC_SUCCESS) {
+    if (isfs_status != 0) {
         printf("[ERROR] Failed to initialize NAND access! Code: %d\n", isfs_status);
         printf("Please ensure cIOS 249 is installed on your Wii.\n");
     } else {
@@ -88,7 +85,7 @@ int main(int argc, char **argv) {
         printf("[INFO] Scanning internal saves in %s...\n", nandSaveDir);
         
         u32 numEntries = 0;
-        static char nameList[MAXPATHLEN] __attribute__((aligned(32)));
+        static char nameList[ISFS_MAXPATH] __attribute__((aligned(32)));
         
         s32 ret = ISFS_ReadDir(nandSaveDir, nameList, &numEntries);
         
@@ -143,3 +140,4 @@ int main(int argc, char **argv) {
     exit(0);
     return 0;
 }
+
