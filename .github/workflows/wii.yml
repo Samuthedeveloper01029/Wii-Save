@@ -1,4 +1,4 @@
-name: Automatic Wii DOL Editor
+name: Automatic Wii Compiler
 
 on: [workflow_dispatch, push]
 
@@ -8,18 +8,37 @@ jobs:
     container: devkitpro/devkitppc:latest
 
     steps:
-      - name: Get the code
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Make the DOL
         run: |
-          export PATH=$DEVKITPPC/bin:$PATH
-          powerpc-eabi-gcc -g -O2 -Wall -mrvl -mcpu=750 -meabi -mhard-float -I$DEVKITPRO/libogc/include -L$DEVKITPRO/libogc/lib/wii main.c -lfat -lwiiuse -logc -lm -o boot.elf
+          export PATH=$DEVKITPPC/bin:$DEVKITPRO/tools/bin:$PATH
+          
+          powerpc-eabi-gcc -g -O2 -Wall -mrvl -mcpu=750 -meabi -mhard-float -DGECKO -DHW_RVL \
+            -I$DEVKITPRO/libogc/include \
+            main.c \
+            -L$DEVKITPRO/libogc/lib/wii -lfat -lwiiuse -logc -lm \
+            -o boot.elf
+          
           elf2dol boot.elf boot.dol
 
-      - name: Save the ready boot.dol file
+      - name: Prepare Release Folder
+        run: |
+          mkdir -p release/apps/WiiSave
+          cp boot.dol release/apps/WiiSave/
+          cp apps/WiiSave/meta.xml release/apps/WiiSave/
+          
+          if [ -f "apps/WiiSave/icon.png" ]; then
+            cp apps/WiiSave/icon.png release/apps/WiiSave/
+          fi
+          
+          if [ -d "apps/d2x-cios-installer" ]; then
+            cp -r apps/d2x-cios-installer release/apps/
+          fi
+
+      - name: Save the ready Release Package
         uses: actions/upload-artifact@v4
         with:
-          name: Wii-Save_boot.dol
-          path: boot.dol
-
+          name: Wii_Save_Extractor_With_cIOS_Installer
+          path: release/
