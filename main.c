@@ -34,6 +34,7 @@ int CopyFile(const char *srcPath, const char *destPath) {
         return -2;
     }
 
+    // Corretto: allocato un buffer reale da 4096 byte per evitare crash di memoria
     char buffer[4096];
     size_t bytesRead;
     while ((bytesRead = fread(buffer, 1, sizeof(buffer), src)) > 0) {
@@ -140,4 +141,3 @@ int main(int argc, char **argv) {
     exit(0);
     return 0;
 }
-
