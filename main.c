@@ -34,8 +34,7 @@ int CopyFile(const char *srcPath, const char *destPath) {
         return -2;
     }
 
-    // Usiamo un array buffer statico reale per evitare conflitti di puntatori e velocizzare la scrittura
-    static char buffer[4096];
+    char buffer[4096];
     size_t bytesRead;
     while ((bytesRead = fread(buffer, 1, sizeof(buffer), src)) > 0) {
         fwrite(buffer, 1, bytesRead, dest);
@@ -46,73 +45,87 @@ int CopyFile(const char *srcPath, const char *destPath) {
     return 0;
 }
 
+void ScanAndBackup(const char *nandSaveDir, const char *usbTargetDir) {
+    u32 numEntries = 0;
+    static char nameList[ISFS_MAXPATH] __attribute__((aligned(32)));
+    
+    printf("[INFO] Scanning: %s...\n", nandSaveDir);
+    s32 ret = ISFS_ReadDir(nandSaveDir, nameList, &numEntries);
+    
+    if (ret < 0) {
+        printf("[SKIP] Directory empty or locked. Code: %d\n", ret);
+        return;
+    }
+    
+    if (numEntries == 0) {
+        printf("[INFO] No data found here.\n");
+        return;
+    }
+
+    printf("[SUCCESS] Found %d game entries!\n", numEntries);
+    char *currentEntry = nameList;
+    
+    for (u32 i = 0; i < numEntries; i++) {
+        if (strcmp(currentEntry, ".") != 0 && strcmp(currentEntry, "..") != 0) {
+            char usbGameDir[ISFS_MAXPATH];
+            snprintf(usbGameDir, sizeof(usbGameDir), "%s/%s", usbTargetDir, currentEntry);
+            mkdir(usbGameDir, 0777);
+            
+            char nandFilePath[ISFS_MAXPATH];
+            char usbFilePath[ISFS_MAXPATH];
+            
+            snprintf(nandFilePath, sizeof(nandFilePath), "%s/%s/data/data.bin", nandSaveDir, currentEntry);
+            snprintf(usbFilePath, sizeof(usbFilePath), "%s/data.bin", usbGameDir);
+            
+            int copyResult = CopyFile(nandFilePath, usbFilePath);
+            if (copyResult == 0) {
+                printf(" -> %s [COPIED]\n", currentEntry);
+            } else {
+                printf(" -> %s [NO DATA.BIN]\n", currentEntry);
+            }
+        }
+        currentEntry += strlen(currentEntry) + 1;
+    }
+}
+
 int main(int argc, char **argv) {
     InitialiseVideo();
    
     printf("\n ======================================= ");
-    printf("\n WII SAVE 1.0.6 (1.0v that's not a beta :) ");
+    printf("\n WII UNIVERSAL SAVE EXTRACTOR v1.0.7 ");
     printf("\n ======================================= \n\n");
-   
-    printf("[INFO] Current IOS in use: %d\n\n", IOS_GetVersion());
 
     printf("[INFO] Initializing Wii NAND Filesystem...\n");
     s32 isfs_status = ISFS_Initialize();
     if (isfs_status != 0) {
-        printf("[ERROR] Failed to initialize NAND access! Code: %d\n", isfs_status);
-        printf("Please ensure your Homebrew Channel has AHBPROT enabled.\n");
+        printf("[ERROR] NAND initialization failed! Code: %d\n", isfs_status);
     } else {
-        printf("[SUCCESS] Wii NAND successfully mounted.\n\n");
+        printf("[SUCCESS] Wii NAND successfully mounted.\n");
+    }
+
+    printf("[INFO] Initializing Security subsystem...\n");
+    s32 es_status = ES_Init();
+    if (es_status == 0) {
+        ES_SetUID(0);
+        printf("[SUCCESS] Superuser privileges granted.\n\n");
+    } else {
+        printf("[WARNING] Security module busy.\n\n");
     }
 
     printf("[INFO] Initializing USB Drive...\n");
     if (!fatInitDefault()) {
         printf("[ERROR] Failed to initialize FAT File System on USB!\n");
-        printf("Please check your USB device connection.\n");
     } else {
         printf("[SUCCESS] USB Storage recognized.\n\n");
         
         mkdir("usb:/wii_saves", 0777);
-        const char *nandSaveDir = "/title/00010000";
-        printf("[INFO] Scanning internal saves in %s...\n", nandSaveDir);
         
-        u32 numEntries = 0;
-        static char nameList[ISFS_MAXPATH] __attribute__((aligned(32)));
+        ScanAndBackup("/title/00010001", "usb:/wii_saves");
+        ScanAndBackup("/title/00010000", "usb:/wii_saves");
+        ScanAndBackup("/title/00010004", "usb:/wii_saves");
+        ScanAndBackup("/title/00010007", "usb:/wii_saves");
         
-        s32 ret = ISFS_ReadDir(nandSaveDir, nameList, &numEntries);
-        
-        if (ret < 0) {
-            printf("[ERROR] Cannot read Wii saves directory. Error code: %d\n", ret);
-            if (ret == -102) printf("Reason: Access denied (Permissions issue).\n");
-        } else if (numEntries == 0) {
-            printf("[INFO] No game saves found on this console.\n");
-        } else {
-            printf("[INFO] Found %d game folders. Starting backup...\n\n", numEntries);
-            
-            char *currentEntry = nameList;
-            for (u32 i = 0; i < numEntries; i++) {
-                if (strcmp(currentEntry, ".") != 0 && strcmp(currentEntry, "..") != 0) {
-                    printf("-> Backing up game ID: %s... ", currentEntry);
-                    
-                    char usbGameDir[ISFS_MAXPATH];
-                    snprintf(usbGameDir, sizeof(usbGameDir), "usb:/wii_saves/%s", currentEntry);
-                    mkdir(usbGameDir, 0777);
-                    
-                    char nandFilePath[ISFS_MAXPATH];
-                    char usbFilePath[ISFS_MAXPATH];
-                    snprintf(nandFilePath, sizeof(nandFilePath), "%s/%s/data/data.bin", nandSaveDir, currentEntry);
-                    snprintf(usbFilePath, sizeof(usbFilePath), "%s/data.bin", usbGameDir);
-                    
-                    int copyResult = CopyFile(nandFilePath, usbFilePath);
-                    if (copyResult == 0) {
-                        printf("[OK]\n");
-                    } else {
-                        printf("[NO DATA]\n");
-                    }
-                }
-                currentEntry += strlen(currentEntry) + 1;
-            }
-            printf("\n[SUCCESS] Backup process finished! All files are on your USB.\n");
-        }
+        printf("\n[SUCCESS] Universal backup process completed.\n");
     }
 
     printf("\n---------------------------------------------------");
@@ -131,4 +144,3 @@ int main(int argc, char **argv) {
     exit(0);
     return 0;
 }
-
