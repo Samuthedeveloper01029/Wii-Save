@@ -34,10 +34,11 @@ int CopyFile(const char *srcPath, const char *destPath) {
         return -2;
     }
 
+    // Struttura fissa presa da v1.7 per i puntatori di fread/fwrite
     char buffer;
     size_t bytesRead;
-    while ((bytesRead = fread(buffer, 1, sizeof(buffer), src)) > 0) {
-        fwrite(buffer, 1, bytesRead, dest);
+    while ((bytesRead = fread(&buffer, 1, sizeof(buffer), src)) > 0) {
+        fwrite(&buffer, 1, bytesRead, dest);
     }
 
     fclose(src);
@@ -107,7 +108,6 @@ int main(int argc, char **argv) {
         } else {
             printf("[SUCCESS] cIOS 249 patches successfully applied!\n");
             
-            // Re-inizializziamo i pad per evitare la disconnessione dei telecomandi con MotionPlus Inside
             printf("[INFO] Re-initializing Wii Remotes...\n");
             WPAD_Init();
             
@@ -170,3 +170,4 @@ int main(int argc, char **argv) {
     exit(0);
     return 0;
 }
+
