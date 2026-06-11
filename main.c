@@ -34,6 +34,7 @@ int CopyFile(const char *srcPath, const char *destPath) {
         return -2;
     }
 
+    // Buffer corretto a 4KB per il trasferimento dati
     char buffer[4096];
     size_t bytesRead;
     while ((bytesRead = fread(buffer, 1, sizeof(buffer), src)) > 0) {
@@ -53,16 +54,16 @@ void ScanAndBackup(const char *nandSaveDir, const char *usbTargetDir) {
     s32 ret = ISFS_ReadDir(nandSaveDir, nameList, &numEntries);
     
     if (ret < 0) {
-        printf("[SKIP] Directory empty or locked. Code: %d\n", ret);
+        printf("[SKIP] Empty or locked. Code: %d\n", ret);
         return;
     }
     
     if (numEntries == 0) {
-        printf("[INFO] No data found here.\n");
+        printf("[INFO] No data here.\n");
         return;
     }
 
-    printf("[SUCCESS] Found %d game entries!\n", numEntries);
+    printf("[SUCCESS] Found %d entries!\n", numEntries);
     char *currentEntry = nameList;
     
     for (u32 i = 0; i < numEntries; i++) {
@@ -103,15 +104,6 @@ int main(int argc, char **argv) {
         printf("[SUCCESS] Wii NAND successfully mounted.\n");
     }
 
-    printf("[INFO] Initializing Security subsystem...\n");
-    s32 es_status = ES_Init();
-    if (es_status == 0) {
-        ES_SetUID(0);
-        printf("[SUCCESS] Superuser privileges granted.\n\n");
-    } else {
-        printf("[WARNING] Security module busy.\n\n");
-    }
-
     printf("[INFO] Initializing USB Drive...\n");
     if (!fatInitDefault()) {
         printf("[ERROR] Failed to initialize FAT File System on USB!\n");
@@ -120,6 +112,7 @@ int main(int argc, char **argv) {
         
         mkdir("usb:/wii_saves", 0777);
         
+        // Scansione e backup di tutti i percorsi della NAND reale richiesti
         ScanAndBackup("/title/00010001", "usb:/wii_saves");
         ScanAndBackup("/title/00010000", "usb:/wii_saves");
         ScanAndBackup("/title/00010004", "usb:/wii_saves");
