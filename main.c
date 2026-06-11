@@ -34,7 +34,7 @@ int CopyFile(const char *srcPath, const char *destPath) {
         return -2;
     }
 
-    char buffer[4096];
+    char buffer;
     size_t bytesRead;
     while ((bytesRead = fread(buffer, 1, sizeof(buffer), src)) > 0) {
         fwrite(buffer, 1, bytesRead, dest);
@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
     InitialiseVideo();
    
     printf("\n ======================================= ");
-    printf("\n WII UNIVERSAL SAVE EXTRACTOR v1.0.8 ");
+    printf("\n WII UNIVERSAL SAVE EXTRACTOR v1.0.9 ");
     printf("\n ======================================= \n\n");
 
     printf("[INFO] Activating Custom IOS 249 patches...\n");
@@ -106,6 +106,13 @@ int main(int argc, char **argv) {
             printf("[WARNING] cIOS 249 reload failed. Code: %d\n", reload_status);
         } else {
             printf("[SUCCESS] cIOS 249 patches successfully applied!\n");
+            
+            // Re-inizializziamo i pad per evitare la disconnessione dei telecomandi con MotionPlus Inside
+            printf("[INFO] Re-initializing Wii Remotes...\n");
+            WPAD_Init();
+            
+            printf("[INFO] Waiting for USB bus reset...\n");
+            sleep(2);
         }
     }
     printf("Current IOS active: %d\n\n", IOS_GetVersion());
@@ -119,7 +126,20 @@ int main(int argc, char **argv) {
     }
 
     printf("[INFO] Initializing USB Drive...\n");
-    if (!fatInitDefault()) {
+    
+    int usb_retry = 0;
+    bool usb_mounted = false;
+    while (usb_retry < 5 && !usb_mounted) {
+        if (fatInitDefault()) {
+            usb_mounted = true;
+        } else {
+            usb_retry++;
+            printf("[RETRY] USB initialization attempt %d failed, retrying...\n", usb_retry);
+            sleep(1);
+        }
+    }
+
+    if (!usb_mounted) {
         printf("[ERROR] Failed to initialize FAT File System on USB!\n");
     } else {
         printf("[SUCCESS] USB Storage recognized.\n\n");
