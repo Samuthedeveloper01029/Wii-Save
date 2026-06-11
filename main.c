@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
     InitialiseVideo();
    
     printf("\n ======================================= ");
-    printf("\n WII UNIVERSAL SAVE EXTRACTOR v1.1.0 ");
+    printf("\n WII UNIVERSAL SAVE EXTRACTOR v1.1.1 ");
     printf("\n ======================================= \n\n");
 
     printf("Current IOS active from Loader: %d\n\n", IOS_GetVersion());
