@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
     InitialiseVideo();
    
     printf("\n ======================================= ");
-    printf("\n WII USB SAVE EXTRACTOR v1.4 ");
+    printf("\n WII SAVE 1.0.6 (1.0v that's not a beta :) ");
     printf("\n ======================================= \n\n");
    
     printf("[INFO] Current IOS in use: %d\n\n", IOS_GetVersion());
