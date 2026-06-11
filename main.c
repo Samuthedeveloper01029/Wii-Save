@@ -34,7 +34,6 @@ int CopyFile(const char *srcPath, const char *destPath) {
         return -2;
     }
 
-    // Struttura fissa presa da v1.7 per i puntatori di fread/fwrite
     char buffer;
     size_t bytesRead;
     while ((bytesRead = fread(&buffer, 1, sizeof(buffer), src)) > 0) {
@@ -97,25 +96,10 @@ int main(int argc, char **argv) {
     InitialiseVideo();
    
     printf("\n ======================================= ");
-    printf("\n WII UNIVERSAL SAVE EXTRACTOR v1.0.9 ");
+    printf("\n WII UNIVERSAL SAVE EXTRACTOR v1.1.0 ");
     printf("\n ======================================= \n\n");
 
-    printf("[INFO] Activating Custom IOS 249 patches...\n");
-    if (IOS_GetVersion() != 249) {
-        s32 reload_status = IOS_ReloadIOS(249);
-        if (reload_status < 0) {
-            printf("[WARNING] cIOS 249 reload failed. Code: %d\n", reload_status);
-        } else {
-            printf("[SUCCESS] cIOS 249 patches successfully applied!\n");
-            
-            printf("[INFO] Re-initializing Wii Remotes...\n");
-            WPAD_Init();
-            
-            printf("[INFO] Waiting for USB bus reset...\n");
-            sleep(2);
-        }
-    }
-    printf("Current IOS active: %d\n\n", IOS_GetVersion());
+    printf("Current IOS active from Loader: %d\n\n", IOS_GetVersion());
 
     printf("[INFO] Initializing Wii NAND Filesystem...\n");
     s32 isfs_status = ISFS_Initialize();
@@ -170,4 +154,3 @@ int main(int argc, char **argv) {
     exit(0);
     return 0;
 }
-
