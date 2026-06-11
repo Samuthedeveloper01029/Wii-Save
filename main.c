@@ -34,7 +34,6 @@ int CopyFile(const char *srcPath, const char *destPath) {
         return -2;
     }
 
-    // Buffer corretto a 4KB per il trasferimento dati
     char buffer[4096];
     size_t bytesRead;
     while ((bytesRead = fread(buffer, 1, sizeof(buffer), src)) > 0) {
@@ -54,7 +53,11 @@ void ScanAndBackup(const char *nandSaveDir, const char *usbTargetDir) {
     s32 ret = ISFS_ReadDir(nandSaveDir, nameList, &numEntries);
     
     if (ret < 0) {
-        printf("[SKIP] Empty or locked. Code: %d\n", ret);
+        if (ret == -106) {
+            printf("[SKIP] Folder does not exist on this Wii.\n");
+        } else {
+            printf("[SKIP] Access denied or locked. Code: %d\n", ret);
+        }
         return;
     }
     
@@ -63,7 +66,7 @@ void ScanAndBackup(const char *nandSaveDir, const char *usbTargetDir) {
         return;
     }
 
-    printf("[SUCCESS] Found %d entries!\n", numEntries);
+    printf("[SUCCESS] Found %d game entries!\n", numEntries);
     char *currentEntry = nameList;
     
     for (u32 i = 0; i < numEntries; i++) {
@@ -93,8 +96,19 @@ int main(int argc, char **argv) {
     InitialiseVideo();
    
     printf("\n ======================================= ");
-    printf("\n WII UNIVERSAL SAVE EXTRACTOR v1.0.7 ");
+    printf("\n WII UNIVERSAL SAVE EXTRACTOR v1.0.8 ");
     printf("\n ======================================= \n\n");
+
+    printf("[INFO] Activating Custom IOS 249 patches...\n");
+    if (IOS_GetVersion() != 249) {
+        s32 reload_status = IOS_ReloadIOS(249);
+        if (reload_status < 0) {
+            printf("[WARNING] cIOS 249 reload failed. Code: %d\n", reload_status);
+        } else {
+            printf("[SUCCESS] cIOS 249 patches successfully applied!\n");
+        }
+    }
+    printf("Current IOS active: %d\n\n", IOS_GetVersion());
 
     printf("[INFO] Initializing Wii NAND Filesystem...\n");
     s32 isfs_status = ISFS_Initialize();
@@ -112,7 +126,6 @@ int main(int argc, char **argv) {
         
         mkdir("usb:/wii_saves", 0777);
         
-        // Scansione e backup di tutti i percorsi della NAND reale richiesti
         ScanAndBackup("/title/00010001", "usb:/wii_saves");
         ScanAndBackup("/title/00010000", "usb:/wii_saves");
         ScanAndBackup("/title/00010004", "usb:/wii_saves");
