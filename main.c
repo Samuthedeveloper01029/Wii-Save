@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
     InitialiseVideo();
    
     printf("\n ======================================= ");
-    printf("\n       WII UNIVERSAL SAVE EXTRACTOR v1.1.4 ");
+    printf("\n       WII UNIVERSAL SAVE EXTRACTOR v1.1.5 ");
     printf("\n ======================================= \n\n");
 
     printf("Current IOS active from Loader: %d\n\n", IOS_GetVersion());
@@ -110,7 +110,6 @@ int main(int argc, char **argv) {
     }
 
     printf("[INFO] Initializing USB Drive...\n");
-    
     int usb_retry = 0;
     bool usb_mounted = false;
     while (usb_retry < 5 && !usb_mounted) {
@@ -130,6 +129,13 @@ int main(int argc, char **argv) {
         
         mkdir("usb:/wii_saves", 0777);
         
+        // Sblocco cIOS effettuato all'ultimo secondo utile, a USB già montata
+        if (IOS_GetVersion() != 249) {
+            printf("[INFO] Injecting runtime file-system patches...\n");
+            IOS_ReloadIOS(249);
+            ISFS_Initialize();
+        }
+
         ScanAndBackup("/title/00010001", "usb:/wii_saves");
         ScanAndBackup("/title/00010000", "usb:/wii_saves");
         ScanAndBackup("/title/00010004", "usb:/wii_saves");
