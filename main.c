@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
     InitialiseVideo();
    
     printf("\n ======================================= ");
-    printf("\n WII UNIVERSAL SAVE EXTRACTOR v1.1.2 ");
+    printf("\n WII UNIVERSAL SAVE EXTRACTOR v1.1.3 ");
     printf("\n ======================================= \n\n");
 
     printf("Current IOS active from Loader: %d\n\n", IOS_GetVersion());
@@ -130,7 +130,6 @@ int main(int argc, char **argv) {
         
         mkdir("usb:/wii_saves", 0777);
         
-        // Eseguiamo le scansioni dei percorsi NAND reali
         ScanAndBackup("/title/00010001", "usb:/wii_saves");
         ScanAndBackup("/title/00010000", "usb:/wii_saves");
         ScanAndBackup("/title/00010004", "usb:/wii_saves");
@@ -155,4 +154,3 @@ int main(int argc, char **argv) {
     exit(0);
     return 0;
 }
-
