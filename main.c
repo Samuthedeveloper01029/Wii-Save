@@ -93,17 +93,26 @@ void ScanAndBackup(const char *nandSaveDir, const char *usbTargetDir) {
 }
 
 int main(int argc, char **argv) {
-    // Carichiamo subito il cIOS 249 all'avvio in modo stabile e lineare
-    if (IOS_GetVersion() != 249) {
-        IOS_ReloadIOS(249);
-    }
-
+    // 1. Prima accendiamo lo schermo e attiviamo i pad in modo sicuro
     InitialiseVideo();
    
     printf("\n ======================================= ");
     printf("\n       WII UNIVERSAL SAVE EXTRACTOR v1.1.6 ");
     printf("\n ======================================= \n\n");
 
+    // 2. Ora attiviamo le patch del cIOS 249 DOPO l'accensione video
+    printf("[INFO] Activating Custom IOS 249 patches...\n");
+    if (IOS_GetVersion() != 249) {
+        s32 reload_status = IOS_ReloadIOS(249);
+        if (reload_status < 0) {
+            printf("[WARNING] cIOS 249 reload failed. Code: %d\n", reload_status);
+        } else {
+            printf("[SUCCESS] cIOS 249 patches applied!\n");
+            // Sincronizziamo al volo i telecomandi dopo il reload
+            WPAD_Init();
+            sleep(1);
+        }
+    }
     printf("Current IOS active: %d\n\n", IOS_GetVersion());
 
     printf("[INFO] Initializing Wii NAND Filesystem...\n");
@@ -115,8 +124,6 @@ int main(int argc, char **argv) {
     }
 
     printf("[INFO] Initializing USB Drive...\n");
-    
-    // Ciclo di tentativi per forzare il riconoscimento della USB dopo l'avvio del cIOS
     int usb_retry = 0;
     bool usb_mounted = false;
     while (usb_retry < 8 && !usb_mounted) {
@@ -160,3 +167,4 @@ int main(int argc, char **argv) {
     exit(0);
     return 0;
 }
+
