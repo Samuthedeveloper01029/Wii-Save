@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
     InitialiseVideo();
    
     printf("\n ======================================= ");
-    printf("\n       WII UNIVERSAL SAVE EXTRACTOR v1.1.6 ");
+    printf("\n       WII UNIVERSAL SAVE EXTRACTOR v1.1.7 ");
     printf("\n ======================================= \n\n");
 
     // 2. Ora attiviamo le patch del cIOS 249 DOPO l'accensione video
@@ -167,4 +167,3 @@ int main(int argc, char **argv) {
     exit(0);
     return 0;
 }
-
