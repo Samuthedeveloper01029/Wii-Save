@@ -48,19 +48,14 @@ int CopyFile(const char *srcPath, const char *destPath) {
 void ScanAndBackup(const char *nandSaveDir, const char *usbTargetDir) {
     u32 numEntries = 0;
     
-    // FIX ERRORE -4: Allocazione dinamica e pulita della lista nomi con allineamento corretto a 32-byte richiesto dalla Wii
-    char *nameList = (char *)iosAllocAligned(0, ISFS_MAXPATH, 32);
-    if (!nameList) {
-        printf("[ERROR] Memory allocation failed for scanner.\n");
-        return;
-    }
+    // STRUTTURA 1.7v RIGIDAMENTE PRESERVATA: Aggiunto solo l'allineamento specifico a 32-byte richiesto dalla NAND per eliminare il -4
+    static char nameList[ISFS_MAXPATH] __attribute__((aligned(32)));
     memset(nameList, 0, ISFS_MAXPATH);
-
+    
     printf("[INFO] Scanning: %s...\n", nandSaveDir);
     s32 ret = ISFS_ReadDir(nandSaveDir, nameList, &numEntries);
     
     if (ret < 0) {
-        iosFree(0, nameList);
         if (ret == -106) {
             printf("[SKIP] Folder does not exist on this Wii.\n");
         } else {
@@ -71,7 +66,6 @@ void ScanAndBackup(const char *nandSaveDir, const char *usbTargetDir) {
     
     if (numEntries == 0) {
         printf("[INFO] No data here.\n");
-        iosFree(0, nameList);
         return;
     }
 
@@ -99,12 +93,10 @@ void ScanAndBackup(const char *nandSaveDir, const char *usbTargetDir) {
         }
         currentEntry += strlen(currentEntry) + 1;
     }
-    
-    iosFree(0, nameList);
 }
 
 int main(int argc, char **argv) {
-    InitialVideo();
+    InitialiseVideo();
    
     printf("\n ======================================= ");
     printf("\n       WII UNIVERSAL SAVE EXTRACTOR v1.1.8 ");
